@@ -9,17 +9,13 @@ use Illuminate\Support\Facades\Hash;
 use Validator;
 
 class AuthController extends Controller {
-    public function showRegisterForm() {
-        return view('auth.register');
-    }
-
     public function register(Request $request)
 {
     // Validasi input
     $validator = Validator::make($request->all(), [
         'name' => 'required|string|max:255',
         'email' => 'required|string|email|max:255|unique:users',
-        'password' => 'required|string|min:8|confirmed',
+        'password' => 'required|string|min:8',
     ]);
 
     if ($validator->fails()) {
@@ -33,30 +29,29 @@ class AuthController extends Controller {
         'password' => Hash::make($request->password),
     ]);
 
-    // Membuat token untuk user
-    $token = $user->createToken('MyApp')->accessToken;
 
     return response()->json([
         'status' => true,
         'message' => 'User successfully created',
         'data' => $user,
-        'token' => $token
     ], 201);
 }
-
-    public function showLoginForm() {
-        return view('auth.login');
-    }
-
     public function login(Request $request) {
         $credentials = $request->only('email', 'password');
 
+        $user = User::where('email', $request->email)->first();
+
         if (Auth::attempt($credentials)) {
-            return redirect()->intended('/dashboard');
+            $token = $user->createToken('MyApp')->accessToken;
+            return response()->json([
+                'access_token' => $token,
+                'token_type' => 'bearer',
+                'user' => $user
+            ]);
         }
 
-        return back()->withErrors([
-            'email' => 'Invalid credentials.',
+        return response()->json([
+            'email' => 'Invalid credentials'
         ]);
     }
 

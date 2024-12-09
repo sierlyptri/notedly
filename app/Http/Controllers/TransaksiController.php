@@ -35,10 +35,6 @@ class TransaksiController extends Controller
      */
     public function store(Request $request)
     {
-        // Log data yang diterima untuk debugging
-        \Log::info('User ID:', ['user_id' => $request->user_id]);
-        \Log::info('Request Data:', $request->all());
-
         $validator = Validator::make($request->all(), [
             'user_id' => 'required|exists:users,id',
             'jenis' => 'required|in:Pemasukan,Pengeluaran',
@@ -57,7 +53,6 @@ class TransaksiController extends Controller
             ], 422);
         }
 
-        // Membuat data transaksi
         $transaksi = new Transaksi();
         $transaksi->user_id = $request->user_id;
         $transaksi->jenis = $request->jenis;
@@ -167,4 +162,59 @@ class TransaksiController extends Controller
             return $respon;
         }
     }
+        /**
+         * Get dashboard data.
+         */
+        public function dashboard(Request $request)
+        {
+            $userId = $request->user_id;
+            $startDate = $request->start_date ?? date('Y-m-d');
+            $endDate = $request->end_date ?? date('Y-m-d');
+    
+            $scatterData = Transaksi::where('user_id', $userId)
+                ->whereBetween('tanggal', [$startDate, $endDate])
+                ->select('tanggal', 'jumlah', 'jenis')
+                ->get()
+                ->map(function ($item) {
+                    return [
+                        'x' => $item->tanggal,
+                        'y' => $item->jumlah,
+                        'jenis' => $item->jenis
+                    ];
+                });
+    
+            $chartData = Transaksi::where('user_id', $userId)
+                ->whereBetween('tanggal', [$startDate, $endDate])
+                ->select('kategori', DB::raw('SUM(jumlah) as total'))
+                ->groupBy('kategori')
+                ->get()
+                ->map(function ($item) {
+                    return [
+                        'kategori' => $item->kategori,
+                        'total' => $item->total
+                    ];
+                });
+
+            $totalIncome = Transaksi::where('user_id', $userId)
+                ->whereBetween('tanggal', [$startDate, $endDate])
+                ->where('jenis', 'Pemasukan')
+                ->sum('jumlah');
+    
+            $totalExpense = Transaksi::where('user_id', $userId)
+                ->whereBetween('tanggal', [$startDate, $endDate])
+                ->where('jenis', 'Pengeluaran')
+                ->sum('jumlah');
+    
+            $response = [
+                'status' => true,
+                'data' => [
+                    'scatter_data' => $scatterData,
+                    'chart_data' => $chartData,
+                    'total_income' => $totalIncome,
+                    'total_expense' => $totalExpense
+                ]
+            ];
+    
+            return response()->json($response);
+        }
 }

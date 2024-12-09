@@ -23,8 +23,8 @@ Route::post('/transaksi', [App\Http\Controllers\TransaksiController::class, 'sto
 Route::get('/transaksi/{id}', [App\Http\Controllers\TransaksiController::class, 'show']);
 Route::post('/transaksi/update/{id}', [App\Http\Controllers\TransaksiController::class, 'update']);
 Route::post('/transaksi/delete/{id}', [App\Http\Controllers\TransaksiController::class, 'destroy']);
-Route::get('/register', [App\Http\Controllers\AuthController::class, 'showRegisterForm'])->name('register');
 Route::post('/register', [App\Http\Controllers\AuthController::class, 'register']);
-Route::get('/login', [App\Http\Controllers\AuthController::class, 'showLoginForm'])->name('login');
 Route::post('/login', [App\Http\Controllers\AuthController::class, 'login']);
 Route::post('/logout', [App\Http\Controllers\AuthController::class, 'logout'])->name('logout');
+Route::get('/dashboard', [App\Http\Controllers\TransaksiController::class, 'dashboard']);
+Route::put('/update', [App\Http\Controllers\UserController::class, 'updateProfile']);
